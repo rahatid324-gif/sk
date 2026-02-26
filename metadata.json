@@ -1,0 +1,5 @@
+{
+  "name": "AI Voice Trading Signal Bot",
+  "description": "A professional AI-powered trading assistant that analyzes chart screenshots, generates signals, and provides voice output in English and Bengali.",
+  "requestFramePermissions": ["microphone"]
+}
