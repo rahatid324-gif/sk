@@ -39,6 +39,7 @@ const TRANSLATIONS = {
     close: "Close",
     langToggle: "বাংলা",
     error: "Failed to analyze chart. Please try again.",
+    quotaExceeded: "AI Quota Exceeded. Please wait a few minutes or use your own API key in settings.",
     invalidFormat: "Invalid file format. Please upload a JPG or PNG image.",
     liveAgent: "Live Voice Assistant",
     riskWarning: "Risk Warning: Trading involves significant risk. AI signals are for analysis purposes only and do not guarantee profit. Use at your own risk."
@@ -62,6 +63,7 @@ const TRANSLATIONS = {
     close: "বন্ধ করুন",
     langToggle: "English",
     error: "চার্ট বিশ্লেষণ করতে ব্যর্থ হয়েছে। আবার চেষ্টা করুন।",
+    quotaExceeded: "এআই কোটা শেষ হয়ে গেছে। অনুগ্রহ করে কয়েক মিনিট অপেক্ষা করুন অথবা আপনার নিজস্ব এপিআই কী ব্যবহার করুন।",
     invalidFormat: "অসমর্থিত ফাইল ফরম্যাট। অনুগ্রহ করে একটি JPG বা PNG ছবি আপলোড করুন।",
     liveAgent: "লাইভ ভয়েস সহকারী",
     riskWarning: "ঝুঁকি সতর্কবার্তা: ট্রেডিংয়ে উল্লেখযোগ্য ঝুঁকি রয়েছে। এআই সিগন্যাল শুধুমাত্র বিশ্লেষণের উদ্দেশ্যে এবং লাভের নিশ্চয়তা দেয় না। নিজ দায়িত্বে ব্যবহার করুন।"
@@ -143,8 +145,12 @@ export default function App() {
       
       // Auto-speak
       speakSignal(result);
-    } catch (err) {
-      setError(t.error);
+    } catch (err: any) {
+      if (err.message?.includes('429') || err.status === 'RESOURCE_EXHAUSTED') {
+        setError(t.quotaExceeded);
+      } else {
+        setError(t.error);
+      }
       console.error(err);
     } finally {
       setAnalyzing(false);

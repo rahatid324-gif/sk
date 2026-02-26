@@ -88,9 +88,15 @@ export default function LiveVoiceAgent({ lang, onClose }: LiveVoiceAgentProps) {
       });
 
       sessionRef.current = session;
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to connect to Live API:", err);
-      setError("Failed to initialize voice agent.");
+      if (err.message?.includes('429') || err.status === 'RESOURCE_EXHAUSTED') {
+        setError(lang === 'en' 
+          ? "AI Quota Exceeded. Please wait a few minutes." 
+          : "এআই কোটা শেষ হয়ে গেছে। অনুগ্রহ করে কয়েক মিনিট অপেক্ষা করুন।");
+      } else {
+        setError("Failed to initialize voice agent.");
+      }
       setIsConnecting(false);
     }
   }, [lang, systemInstruction]);

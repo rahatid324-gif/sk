@@ -3,6 +3,18 @@ import { TradingSignal, Language } from "../types";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
+async function withRetry<T>(fn: () => Promise<T>, retries = 2, delay = 2000): Promise<T> {
+  try {
+    return await fn();
+  } catch (err: any) {
+    if (retries > 0 && (err.message?.includes('429') || err.status === 'RESOURCE_EXHAUSTED')) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return withRetry(fn, retries - 1, delay * 2);
+    }
+    throw err;
+  }
+}
+
 export async function analyzeChart(imageBase64: string, lang: Language): Promise<TradingSignal> {
   const model = "gemini-3-flash-preview";
   
@@ -10,7 +22,7 @@ export async function analyzeChart(imageBase64: string, lang: Language): Promise
     ? "Act as a professional high-frequency trading analyst. Analyze this chart with 100% focus on high-probability setups. Identify the primary trend, key support/resistance levels, and candlestick patterns. Provide a signal (BUY, SELL, or HOLD) ONLY if there is strong confirmation. If the market is sideways or uncertain, suggest HOLD. Include a confidence level (0-100), a specific timeframe (1m-5m), and a technical justification."
     : "একজন পেশাদার হাই-ফ্রিকোয়েন্সি ট্রেডিং অ্যানালিস্ট হিসেবে কাজ করুন। উচ্চ-সম্ভাবনার সেটআপগুলোর ওপর ১০০% ফোকাস করে এই চার্টটি বিশ্লেষণ করুন। প্রাথমিক ট্রেন্ড, মূল সাপোর্ট/রেজিস্ট্যান্স লেভেল এবং ক্যান্ডেলস্টিক প্যাটার্ন শনাক্ত করুন। শুধুমাত্র শক্তিশালী কনফার্মেশন থাকলেই সিগন্যাল (BUY, SELL, বা HOLD) প্রদান করুন। যদি মার্কেট সাইডওয়ে বা অনিশ্চিত থাকে, তবে HOLD সাজেস্ট করুন। একটি কনফিডেন্স লেভেল (০-১০০), একটি নির্দিষ্ট টাইমফ্রেম (১মি-৫মি) এবং একটি টেকনিক্যাল যুক্তি অন্তর্ভুক্ত করুন।";
 
-  const response = await ai.models.generateContent({
+  const response = await withRetry(() => ai.models.generateContent({
     model,
     contents: [
       {
@@ -38,7 +50,7 @@ export async function analyzeChart(imageBase64: string, lang: Language): Promise
         required: ["type", "confidence", "timeframe", "explanation"]
       }
     }
-  });
+  }));
 
   return JSON.parse(response.text) as TradingSignal;
 }
@@ -48,7 +60,7 @@ export async function generateSpeech(text: string, lang: Language): Promise<stri
   
   const voiceName = lang === 'en' ? 'Zephyr' : 'Kore'; // Using available voices
   
-  const response = await ai.models.generateContent({
+  const response = await withRetry(() => ai.models.generateContent({
     model,
     contents: [{ parts: [{ text }] }],
     config: {
@@ -59,7 +71,7 @@ export async function generateSpeech(text: string, lang: Language): Promise<stri
         },
       },
     },
-  });
+  }));
 
   const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
   if (!base64Audio) throw new Error("Failed to generate audio");
