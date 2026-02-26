@@ -52,7 +52,15 @@ export async function analyzeChart(imageBase64: string, lang: Language): Promise
     }
   }));
 
-  return JSON.parse(response.text) as TradingSignal;
+  const text = response.text || "{}";
+  const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+  
+  try {
+    return JSON.parse(cleanedText) as TradingSignal;
+  } catch (e) {
+    console.error("Failed to parse Gemini response:", cleanedText);
+    throw new Error("Invalid response format from AI");
+  }
 }
 
 export async function generateSpeech(text: string, lang: Language): Promise<string> {

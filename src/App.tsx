@@ -14,7 +14,7 @@ import {
   X,
   Mic
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { analyzeChart, generateSpeech } from './services/geminiService';
 import { TradingSignal, HistoryItem, Language } from './types';
 import LiveVoiceAgent from './components/LiveVoiceAgent';
